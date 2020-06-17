@@ -1,7 +1,7 @@
 from p5 import *
 
 def setup():
-    size(640, 360)
+    size(600, 360)
     no_stroke()
     background(204)
 
