@@ -2,7 +2,9 @@ from p5 import *
 from array import *
 import numpy
 import random
-import time,threading
+import time
+import threading
+from threading import Thread,Event
 
 height = 800
 width = 1600
@@ -28,16 +30,15 @@ Shapes=[[[-2,0],[-1,0],[0,0],[1,0]],
         [[-1,0],[0,0],[1,0],[-1,1]]]
 
 rotationmatrix=[[0,-1],[1,0]]
-trigger=1
 def setup():
-    global Board1,Block1
+    global Board1,Block1,stopFlag
     size(width,height)
     Board1=Board(width,height)
     Block1=Stone()
-    ShiftTimer()
 
-
-
+    stopFlag = Event()
+    thread=MyThread(stopFlag)
+    thread.start()
 
 def draw():
     background(0)
@@ -46,26 +47,28 @@ def draw():
     Block1.draw()
 
 
-def ShiftTimer():
-    threading.Timer(0.1,shift_down).start()
+class MyThread(Thread):
+    def __init__(self, event):
+        Thread.__init__(self)
+        self.stopped = event
+        self.setDaemon(daemonic=True)
+
+    def run(self):
+        while not self.stopped.wait(0.5):
+            try:
+                Block1.move('Down')
+            except:
+                print('Test')
 
 
-def shift_down():
-    try:
-        Block1.position[1] += 1
-    except AttributeError:
-        None
-    threading.Timer(0.1, ShiftTimer).start()
-
-def key_pressed():
+#Keyboard events
+def key_pressed(event):
     if key=='UP':
         Block1.rotation()
     if key=='LEFT':
         Block1.move('Left')
     if key=='RIGHT':
         Block1.move('Right')
-
-
 
 class Stone(object):
     def __init__(self):
@@ -92,6 +95,9 @@ class Stone(object):
         if Direction == 'Left':
             if not (min(x[0] for x in self.shape) + int(self.position[0])) < 1:
                 self.position[0]-=1
+        if Direction=='Down':
+            if not int(self.position[1])-(min(y[1] for y in self.shape))> (zellsy-2):
+                self.position[1]+=1
 
     def draw(self):
         for i in self.shape:
@@ -115,7 +121,6 @@ class Board(object):
                     fill(self.occupied[i][j])
                     rect((xstart+j*zellsize,ystart+i*zellsize), zellsize, zellsize)
 
-
 def drawgrid():
     line_color=255
     stroke(line_color)
@@ -125,4 +130,4 @@ def drawgrid():
         line((xstart,ystart+ j*zellsize), (xstart+play_width, ystart+j*zellsize))
 
 if __name__ == '__main__':
-    run(frame_rate=10)
+    run()
