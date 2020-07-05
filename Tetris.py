@@ -265,7 +265,7 @@ class Board(object):
         text("Tetris", (300, 1 * height / 3))
         text_font(Font)
         text("Objektorientiertes Programmieren", (300, 2 * height / 3))
-        text("Tristan Schwörer", (300, (2 * height / 3)+40))
+        text("Tristan Schwoerer", (300, (2 * height / 3)+40))
         text("F6 71336", (300, (2 * height / 3) + 80))
 
     def DisplaynextBlock(self):
