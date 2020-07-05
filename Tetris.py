@@ -87,61 +87,54 @@ class Stone(object):
 
 
     def rotation(self):
+        buffershape=self.shape
         if self.Type == 'O':
             self.shape=self.shape
         else:
-            for i in self.shape:
+            for i in buffershape:
                 x = i[0] * rotationmatrix[0][0] + i[1] * rotationmatrix[1][0]
                 y = i[0] * rotationmatrix[0][1] + i[1] * rotationmatrix[1][1]
-                i[0]=x
-                i[1]=y
+                i[0] = x
+                i[1] = y
+            if not checkOccupied(buffershape,self.position):
+                self.shape=buffershape
+
 
 
     def move(self,Direction):
         global PieceTrigger
         buffershape=self.shape
         bufferposition=self.position
-
-
         if Direction=='Right':
-            # check pieces
-            if max(x[0] for x in buffershape) + bufferposition[0] < 9:
-                bufferposition[0] += 1
-                if checkOccupied(buffershape, bufferposition):
-                    bufferposition[0] -= 1
-                    updatecoordinates(self.shape, self.position)
-            #check boarders
-            elif max(x[0] for x in buffershape)+bufferposition[0]>=9:
-                updatecoordinates(self.shape,self.position)
-            else:
+            #check pieces
+            bufferposition[0] += 1
+            if not checkOccupied(buffershape, bufferposition):
+                # add currentpiece to occupied and spawn new piece
                 updatecoordinates(buffershape, bufferposition)
+            else:
+                bufferposition[0] -= 1
+                updatecoordinates(self.shape, self.position)
 
         elif Direction == 'Left':
             #check pieces
-            if min(x[0] for x in buffershape) + bufferposition[0] >0:
-                bufferposition[0] -= 1
-                if checkOccupied(buffershape, bufferposition):
-                    bufferposition[0] += 1
-                    updatecoordinates(self.shape, self.position)
-            # check boarders
-            elif min(x[0] for x in buffershape) + bufferposition[0]<=0:
-                updatecoordinates(self.shape, self.position)
-            else:
+            bufferposition[0] -= 1
+            if not checkOccupied(buffershape, bufferposition):
+                # add currentpiece to occupied and spawn new piece
                 updatecoordinates(buffershape, bufferposition)
+            else:
+                bufferposition[0] += 1
+                updatecoordinates(self.shape, self.position)
 
         if Direction=='Down':
-            if max(y[1] for y in buffershape) + bufferposition[1] >= 19:
-                addPieceToOccupied(self)
-            # check pieces
-            elif max(y[1] for y in buffershape) + bufferposition[1] < 19:
-                bufferposition[1] += 1
-                if checkOccupied(buffershape, bufferposition):
-                    bufferposition[1] -= 1
-                    # add currentpiece to occupied and spawn new piece
-                    addPieceToOccupied(self)
-            else:
-                # Set new Position
+            bufferposition[1] += 1
+            if not checkOccupied(buffershape, bufferposition):
+                # add currentpiece to occupied and spawn new piece
                 updatecoordinates(buffershape, bufferposition)
+            else:
+                bufferposition[1] -= 1
+                addPieceToOccupied(self)
+                # Set new Position
+
 
     def draw(self):
         for i in self.shape:
@@ -162,12 +155,20 @@ def addPieceToOccupied(Block):
 
 def checkOccupied(shape,position):
     Adder=0
-    for x in shape:
-        Adder+= sum(Board1.occupied[x[1] + position[1], x[0] + position[0]])
-    if Adder>0:
-        return True
+    xmin = min(a[0] for a in shape) + position[0]
+    xmax = max(a[0] for a in shape) + position[0]
+    ymax = max(b[1] for b in shape) + position[1]
+    #check boarders
+    if (xmin in range(0,zellsx)) and (xmax in range(0,zellsx)) and (ymax in range(0,zellsy)):
+        #check Fields
+        for x in shape:
+            Adder+= sum(Board1.occupied[x[1] + position[1], x[0] + position[0]])
+        if Adder>0:
+            return True
+        else:
+            return False
     else:
-        return False
+        return True
 
 class Board(object):
 
