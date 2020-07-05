@@ -30,6 +30,7 @@ Shapes=[[[-2,0],[-1,0],[0,0],[1,0]],
         [[-1,0],[0,0],[1,0],[-1,1]]]
 
 rotationmatrix=[[0,-1],[1,0]]
+ccrotationmatrix=[[0,1],[-1,0]]
 
 Colors=[[0,255,255],[255,255,0],[0,255,0],[255,0,0],[128,0,128],[0,0,255],[255,165,0]]
 
@@ -85,19 +86,26 @@ class Stone(object):
         self.color=Colors[Types.index(self.Type)]
         PieceTrigger=False
 
-
     def rotation(self):
         buffershape=self.shape
         if self.Type == 'O':
-            self.shape=self.shape
+            updatecoordinates(self.shape, self.position)
         else:
             for i in buffershape:
                 x = i[0] * rotationmatrix[0][0] + i[1] * rotationmatrix[1][0]
                 y = i[0] * rotationmatrix[0][1] + i[1] * rotationmatrix[1][1]
                 i[0] = x
                 i[1] = y
-            if not checkOccupied(buffershape,self.position):
+
+            if checkOccupied(buffershape,self.position)==False:
                 self.shape=buffershape
+            else:
+                for i in buffershape:
+                    x = i[0] * ccrotationmatrix[0][0] + i[1] * ccrotationmatrix[1][0]
+                    y = i[0] * ccrotationmatrix[0][1] + i[1] * ccrotationmatrix[1][1]
+                    i[0] = x
+                    i[1] = y
+                updatecoordinates(self.shape, self.position)
 
 
 
@@ -196,4 +204,4 @@ def drawgrid():
         line((xstart,ystart+ j*zellsize), (xstart+play_width, ystart+j*zellsize))
 
 if __name__ == '__main__':
-    run(frame_rate=30)
+    run(frame_rate=60)
