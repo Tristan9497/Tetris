@@ -1,11 +1,10 @@
 from p5 import *
-from array import *
+from threading import Thread,Event
 import numpy
 import random
-import time
-import threading
-from threading import Thread,Event
+import copy
 
+#region Generic Definitions
 height = 800
 width = 1600
 xstart = 600
@@ -35,11 +34,11 @@ ccrotationmatrix=[[0,1],[-1,0]]
 
 Colors=[[0,255,255],[255,255,0],[0,255,0],[255,0,0],[128,0,128],[0,0,255],[255,165,0]]
 CycleTime=0.6
-
+#endregion
 
 def setup():
-    global Board1, CurrentBlock, stopFlag, PieceTrigger, Score, NextShape, GameTrigger, Font, Font2
-
+    global Playfield, CurrentBlock, stopFlag, PieceTrigger, Score, NextShape, GameTrigger, Font, Font2, Tetris
+    #standard p5 setup function
     #Trigger
     PieceTrigger = False
     GameTrigger=False
@@ -51,32 +50,41 @@ def setup():
     Font2 = create_font("ARIALBD.ttf", 72)
     text_align(align_x="CENTER", align_y="CENTER")
 
-    #Object Generation
-    Board1=Board(width,height)
-    CurrentBlock=Stone(random.choice(Types))
+    # Object Generation
+    Tetris=Game()
+    Playfield = Board(width, height)
+    CurrentBlock = Stone(random.choice(Types))
     stopFlag = Event()
-    thread=MyThread(stopFlag)
+    thread = MyThread(stopFlag)
     thread.start()
 
-    #Variables
+    # Variables
     NextShape = random.choice(Types)
-    Score=0
+    Score = 0
 
 def draw():
-    #Main Loop
+    global Tetris
+    #standard p5 loop function
     if GameTrigger:
-        GameBehaviour()
+        Tetris.Behaviour()
     else:
-        Board1.DisplayStartScreen()
+        Tetris.DisplayStartScreen()
 
-def GameBehaviour():
-    Board1.drawgrid()
-    Board1.drawblocks()
-    Board1.removeLine()
-    CurrentBlock.draw()
-    Board1.writeScore()
-    Board1.writeInfo()
-    Board1.DisplaynextBlock()
+def key_pressed(event):
+    # Keyboard event handler
+    global GameTrigger,Playfield,Score
+    if key=='UP':
+        CurrentBlock.rotation()
+    if key=='LEFT':
+        CurrentBlock.move('Left')
+    if key=='RIGHT':
+        CurrentBlock.move('Right')
+    if key=='DOWN':
+        CurrentBlock.move('Down')
+    if key=='ENTER':
+        GameTrigger=True
+        Playfield=Board(width,height)
+        Score=0
 
 class MyThread(Thread):
     # Timer Thread for Downwards movement
@@ -90,27 +98,39 @@ class MyThread(Thread):
         while not self.stopped.wait(CycleTime):
             CycleTime-=abs(CycleTime-0.1)/1000
             if (PieceTrigger):
-                Board1.checkTopLine()
+                Playfield.checkTopLine()
                 CurrentBlock.__init__(NextShape)
                 NextShape = random.choice(Types)
             else:
                 CurrentBlock.move('Down')
 
-def key_pressed(event):
-    # Keyboard events
-    global GameTrigger,Board1,Score
-    if key=='UP':
-        CurrentBlock.rotation()
-    if key=='LEFT':
-        CurrentBlock.move('Left')
-    if key=='RIGHT':
-        CurrentBlock.move('Right')
-    if key=='DOWN':
-        CurrentBlock.move('Down')
-    if key=='ENTER':
-        GameTrigger=True
-        Board1=Board(width,height)
-        Score=0
+class Game():
+    def Behaviour(self):
+        Playfield.drawgrid()
+        Playfield.drawblocks()
+        Playfield.writeScore()
+        Playfield.DisplaynextBlock()
+        CurrentBlock.draw()
+        self.writeInfo()
+
+    def DisplayStartScreen(self):
+        background(0)
+        global Score, Font
+        text_font(Font)
+        fill(255)
+        text_align(align_x="CENTER", align_y="CENTER")
+        text("To start a new game press enter", (width / 2, height / 2))
+        text("To exit the game press ESC", (width / 2, height - 50))
+
+    def writeInfo(self):
+        global Font, Font2
+        fill(255)
+        text_font(Font2)
+        text("Tetris", (300, 1 * height / 3))
+        text_font(Font)
+        text("Objektorientiertes Programmieren", (300, 2 * height / 3))
+        text("Tristan Schwoerer", (300, (2 * height / 3)+40))
+        text("F6 71336", (300, (2 * height / 3) + 80))
 
 class Stone(object):
     def __init__(self,NextShape):
@@ -122,7 +142,7 @@ class Stone(object):
         PieceTrigger=False
 
     def rotation(self):
-        buffershape=self.shape
+        buffershape=copy.deepcopy(self.shape)
         if self.Type == 'O':
             None
         else:
@@ -132,42 +152,35 @@ class Stone(object):
                 i[0] = x
                 i[1] = y
 
-            if not checkOccupied(buffershape,self.position):
+            if not Playfield.checkOccupied(buffershape,self.position):
                 self.shape=buffershape
-            else:
-                for i in buffershape:
-                    x = i[0] * ccrotationmatrix[0][0] + i[1] * ccrotationmatrix[1][0]
-                    y = i[0] * ccrotationmatrix[0][1] + i[1] * ccrotationmatrix[1][1]
-                    i[0] = x
-                    i[1] = y
 
     def move(self,Direction):
         global PieceTrigger
-        buffershape=self.shape
-        bufferposition=self.position
+        buffershape=copy.deepcopy(self.shape)
+        bufferposition=copy.deepcopy(self.position)
         if Direction=='Right':
             #check pieces
             bufferposition[0] += 1
-            if not checkOccupied(buffershape, bufferposition):
+            if not Playfield.checkOccupied(buffershape,bufferposition):
                 self.updatecoordinates(buffershape, bufferposition)
-            else:
-                bufferposition[0] -= 1
+
 
         elif Direction == 'Left':
+
             #check pieces
             bufferposition[0] -= 1
-            if not checkOccupied(buffershape, bufferposition):
+            if not Playfield.checkOccupied(buffershape,bufferposition):
                 self.updatecoordinates(buffershape, bufferposition)
-            else:
-                bufferposition[0] += 1
+
 
         if Direction=='Down':
             bufferposition[1] += 1
-            if not checkOccupied(buffershape, bufferposition):
+            if not Playfield.checkOccupied(buffershape,bufferposition):
                 self.updatecoordinates(buffershape, bufferposition)
             else:
-                bufferposition[1] -= 1
-                Board1.addPieceToOccupied(self)
+                Playfield.addPieceToOccupied(self)
+
 
     def draw(self):
         for i in self.shape:
@@ -176,42 +189,75 @@ class Stone(object):
 
     def updatecoordinates(self, shape, position):
         #updates block object variables
-        CurrentBlock.position = position
-        CurrentBlock.shape = shape
-
-def checkOccupied(shape,position):
-    Adder=0
-    xmin = min(a[0] for a in shape) + position[0]
-    xmax = max(a[0] for a in shape) + position[0]
-    ymax = max(b[1] for b in shape) + position[1]
-    #check boarders
-    if (xmin in range(0,zellsx)) and (xmax in range(0,zellsx)) and (ymax in range(0,zellsy)):
-        #check Fields
-        for x in shape:
-            Adder+= sum(Board1.occupied[x[1] + position[1], x[0] + position[0]])
-        if Adder>0:
-            return True
-        else:
-            return False
-    else:
-        return True
+        CurrentBlock.position = position[:]
+        CurrentBlock.shape = shape[:]
 
 class Board(object):
     #This Class is meant to handle
-    # Displaying of all stationary Objects
-    # Detection for placed blocks
+    # * Displaying of all stationary Objects
+    # * Routines to handle block behaviour when certain cases occur
+
     def __init__(self,width,height):
         self.occupied = np.zeros((zellsy,zellsx,3), dtype=int)
         self.width = width
         self.height = height
 
+    #Routines
+    def checkOccupied(self, shape, position):
+        Adder = 0
+        xmin = min(a[0] for a in shape) + position[0]
+        xmax = max(a[0] for a in shape) + position[0]
+        ymax = max(b[1] for b in shape) + position[1]
+        # check boarders
+
+        if (xmin in range(0, zellsx)) and (xmax in range(0, zellsx)) and (ymax in range(0, zellsy)):
+            # check Fields
+            for x in shape:
+                Adder += sum(self.occupied[x[1] + position[1], x[0] + position[0]])
+            if Adder > 0:
+                return True
+            else:
+                return False
+        else:
+            return True
+
     def addPieceToOccupied(self, Block):
         global PieceTrigger
         for i in Block.shape:
-            for j in range(0, len(Block.color)):
-                self.occupied[(Block.position[1] + i[1]), (Block.position[0] + i[0]), (j)] = Block.color[j]
+            self.occupied[(Block.position[1] + i[1]), (Block.position[0] + i[0])] = copy.deepcopy(Block.color)
         PieceTrigger = True
+        self.FindLine()
 
+    def FindLine(self):
+        global Score
+        Counter=0
+        Line=0
+        for i in range(zellsy-1,-1,-1):
+            for j in range(0,zellsx):
+                if sum(self.occupied[i,j])>0:
+                    Counter+=1
+            if Counter==10:
+                self.removeLine(i)
+                return
+
+    def removeLine(self, Line):
+        global Score
+        for k in range(Line, 0, -1):
+            self.occupied[k]=self.occupied[k - 1]
+        Score+=100
+        #start FindLine again to rmeove potential remaining Lines
+        self.FindLine()
+
+    def checkTopLine(self):
+        global GameTrigger
+        sum=0
+        for i in self.occupied[0]:
+            sum += numpy.sum(i)
+        print(sum)
+        if sum>0:
+            GameTrigger=False
+
+    #Display
     def drawgrid(self):
         background(0)
         line_color = 255
@@ -227,30 +273,6 @@ class Board(object):
                     fill(self.occupied[i,j,0],self.occupied[i,j,1],self.occupied[i,j,2])
                     rect((xstart+j*zellsize,ystart+i*zellsize), zellsize, zellsize)
 
-    def removeLine(self):
-        global Score
-        Counter=0
-        for i in range(zellsy-1,-1,-1):
-            for j in range(0,zellsx):
-                if sum(self.occupied[i,j])>0:
-                    Counter+=1
-            if Counter==10:
-                for k in range(i, 0, -1):
-                    self.occupied[k]=self.occupied[k - 1]
-                self.occupied[0] = numpy.zeros((zellsx, 3), dtype=int)
-                Score+=10
-            Counter=0
-
-    def checkTopLine(self):
-        global GameTrigger
-        sum=0
-        for i in self.occupied[0]:
-            sum += numpy.sum(i)
-        print(sum)
-        if sum>0:
-            GameTrigger=False
-
-    #Display
     def writeScore(self):
         global Score, Font
         text_font(Font)
@@ -259,31 +281,14 @@ class Board(object):
         text("Current Score:" + str(Score), (1300, 2*height/3))
         text("Next Piece", (1300, (1 * height / 3)-100))
 
-    def writeInfo(self):
-        global Font, Font2
-        text_font(Font2)
-        text("Tetris", (300, 1 * height / 3))
-        text_font(Font)
-        text("Objektorientiertes Programmieren", (300, 2 * height / 3))
-        text("Tristan Schwoerer", (300, (2 * height / 3)+40))
-        text("F6 71336", (300, (2 * height / 3) + 80))
-
     def DisplaynextBlock(self):
         global NextShape
-        shape=Shapes[Types.index(NextShape)]
-        NewColor=Colors[Types.index(NextShape)]
-        for i in shape:
+        Testshape=copy.deepcopy(Shapes[Types.index(NextShape)])
+        NewColor=copy.deepcopy(Colors[Types.index(NextShape)])
+        for i in Testshape:
             fill(NewColor[0],NewColor[1],NewColor[2])
             rect((1300+(i[0])*zellsize,1*height/3+(i[1])*zellsize),zellsize,zellsize)
 
-    def DisplayStartScreen(self):
-        background(0)
-        global Score, Font
-        text_font(Font)
-        fill(255)
-        text_align(align_x="CENTER", align_y="CENTER")
-        text("To start a new game press enter", (width / 2, height / 2))
-        text("To exit the game press ESC", (width / 2, height - 50))
 
 if __name__ == '__main__':
     run()
