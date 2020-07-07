@@ -36,7 +36,7 @@ CycleTime=0.6
 #endregion
 
 def setup():
-    global Playfield, CurrentBlock, stopFlag, PieceTrigger, Score, NextShape, GameTrigger, Font, Font2, Tetris, helpTrigger, img
+    global Playfield, CurrentBlock, stopFlag, PieceTrigger, Score, NextShape, GameTrigger, Font, Font2, Tetris, helpTrigger, img,Logo
     #standard p5 setup function
     #Trigger
     PieceTrigger = False
@@ -50,7 +50,7 @@ def setup():
     Font2 = create_font("ARIALBD.ttf", 72)
     text_align(align_x="CENTER", align_y="CENTER")
     img=load_image('EasterEgg.png')
-
+    Logo=load_image('Tetris_Logo.png')
     # Object Generation
     Tetris=Game()
     Playfield = Board(width, height)
@@ -124,29 +124,31 @@ class Game():
 
     def DisplayStartScreen(self):
         background(0)
-        global Score, Font,img
+        global Score, Font,img,Logo
         img.load_pixels
+        Logo.load_pixels
         text_font(Font)
         fill(255)
         if not helpTrigger:
+            image(Logo,(((width / 2)-Logo.width/2,50)))
             text("To start a new game press enter", (width / 2, height / 2))
-            text("To toggle help press H to ", (width / 2, (height / 2)+150))
+            text("To toggle help press H", (width / 2, height - 100))
             text("To exit the game press ESC", (width / 2, height - 50))
         else:
             text("Rotation > Arrow Key Up", ((width / 2),100))
             text("Move Down > Arrow Key Down", ((width / 2),140))
             text("Move Left > Arrow Key Left", ((width / 2),180))
             text("Move Right > Arrow Key Right", ((width / 2),220))
-            text("You realy wanted to Explore this?", ((width / 2),400))
+            text("You really wanted to Explore this?", ((width / 2),400))
             text("I think Every Game needs an Easter Egg", ((width / 2),450))
             image(img,(width / 2-img.width/2,500))
             text("You can press H again to get back or press enter to start a game", ((width / 2), 750))
 
     def writeInfo(self):
-        global Font, Font2
+        global Font, Font2 ,Logo
         fill(255)
         text_font(Font2)
-        text("Tetris", (300, 1 * height / 3))
+        image(Logo, ((300 - Logo.width / 2, (height / 3)-Logo.height/2)))
         text_font(Font)
         text("Objektorientiertes Programmieren", (300, 2 * height / 3))
         text("Tristan Schwoerer", (300, (2 * height / 3)+40))
