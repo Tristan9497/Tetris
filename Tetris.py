@@ -103,7 +103,8 @@ class MyThread(Thread):
     def run(self):
         global NextShape, CycleTime
         while not self.stopped.wait(CycleTime):
-            CycleTime-=abs(CycleTime-0.1)/200
+            #increasing speed asymptotically
+            CycleTime-=abs(CycleTime-0.09)/300
             if (PieceTrigger):
                 Playfield.checkTopLine()
                 CurrentBlock.__init__(NextShape)
@@ -248,7 +249,6 @@ class Board(object):
         sum=0
         for i in self.occupied[0]:
             sum += numpy.sum(i)
-        print(sum)
         if sum>0:
             GameTrigger=False
 
@@ -308,7 +308,7 @@ class Board(object):
         NewColor=copy.deepcopy(Colors[Types.index(NextShape)])
         for i in Testshape:
             fill(NewColor[0],NewColor[1],NewColor[2])
-            rect((1300+(i[0])*zellsize,1*height/3+(i[1])*zellsize),zellsize,zellsize)
+            rect((1300+(i[0])*zellsize - zellsize/2,1*height/3+(i[1])*zellsize - zellsize/2),zellsize,zellsize)
 
 
 if __name__ == '__main__':
