@@ -36,11 +36,12 @@ CycleTime=0.6
 #endregion
 
 def setup():
-    global Playfield, CurrentBlock, stopFlag, PieceTrigger, Score, NextShape, GameTrigger, Font, Font2, Tetris
+    global Playfield, CurrentBlock, stopFlag, PieceTrigger, Score, NextShape, GameTrigger, Font, Font2, Tetris, helpTrigger, img
     #standard p5 setup function
     #Trigger
     PieceTrigger = False
     GameTrigger=False
+    helpTrigger= False
 
     #UI Setup
     background(0)
@@ -48,6 +49,7 @@ def setup():
     Font = create_font("ARIALBD.ttf", 34)
     Font2 = create_font("ARIALBD.ttf", 72)
     text_align(align_x="CENTER", align_y="CENTER")
+    img=load_image('EasterEgg.png')
 
     # Object Generation
     Tetris=Game()
@@ -71,7 +73,7 @@ def draw():
 
 def key_pressed(event):
     # Keyboard event handler
-    global GameTrigger,Playfield,Score
+    global GameTrigger, helpTrigger,Playfield,Score
     if key=='UP':
         CurrentBlock.rotation()
     if key=='LEFT':
@@ -84,6 +86,12 @@ def key_pressed(event):
         GameTrigger=True
         Playfield=Board(width,height)
         Score=0
+    if key=='H':
+        if not helpTrigger:
+            helpTrigger=True
+        elif helpTrigger:
+            helpTrigger=False
+
 
 class MyThread(Thread):
     # Timer Thread for Downwards movement
@@ -101,9 +109,11 @@ class MyThread(Thread):
                 CurrentBlock.__init__(NextShape)
                 NextShape = random.choice(Types)
             else:
-                CurrentBlock.move('Down')
+                if GameTrigger:
+                    CurrentBlock.move('Down')
 
 class Game():
+    global helpTrigger
     def Behaviour(self):
         Playfield.drawgrid()
         Playfield.drawblocks()
@@ -114,12 +124,23 @@ class Game():
 
     def DisplayStartScreen(self):
         background(0)
-        global Score, Font
+        global Score, Font,img
+        img.load_pixels
         text_font(Font)
         fill(255)
-        text_align(align_x="CENTER", align_y="CENTER")
-        text("To start a new game press enter", (width / 2, height / 2))
-        text("To exit the game press ESC", (width / 2, height - 50))
+        if not helpTrigger:
+            text("To start a new game press enter", (width / 2, height / 2))
+            text("To toggle help press H to ", (width / 2, (height / 2)+150))
+            text("To exit the game press ESC", (width / 2, height - 50))
+        else:
+            text("Rotation > Arrow Key Up", ((width / 2),100))
+            text("Move Down > Arrow Key Down", ((width / 2),140))
+            text("Move Left > Arrow Key Left", ((width / 2),180))
+            text("Move Right > Arrow Key Right", ((width / 2),220))
+            text("You realy wanted to Explore this?", ((width / 2),400))
+            text("I think Every Game needs an Easter Egg", ((width / 2),450))
+            image(img,(width / 2-img.width/2,500))
+            text("You can press H again to get back or press enter to start a game", ((width / 2), 750))
 
     def writeInfo(self):
         global Font, Font2
