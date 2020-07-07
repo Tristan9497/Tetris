@@ -30,7 +30,6 @@ Shapes=[[[-2,0],[-1,0],[0,0],[1,0]],
         [[-1,0],[0,0],[1,0],[-1,1]]]
 
 rotationmatrix=[[0,-1],[1,0]]
-ccrotationmatrix=[[0,1],[-1,0]]
 
 Colors=[[0,255,255],[255,255,0],[0,255,0],[255,0,0],[128,0,128],[0,0,255],[255,165,0]]
 CycleTime=0.6
@@ -96,7 +95,7 @@ class MyThread(Thread):
     def run(self):
         global NextShape, CycleTime
         while not self.stopped.wait(CycleTime):
-            CycleTime-=abs(CycleTime-0.1)/1000
+            CycleTime-=abs(CycleTime-0.1)/200
             if (PieceTrigger):
                 Playfield.checkTopLine()
                 CurrentBlock.__init__(NextShape)
@@ -233,15 +232,18 @@ class Board(object):
     def FindLine(self):
         global Score
         Counter=0
-        for i in range(0,zellsy):
+        for i in range(zellsy-1,-1,-1):
             for j in range(0,zellsx):
                 if sum(self.occupied[i,j])>0:
                     Counter+=1
-            if Counter==10:
+            if Counter == 0:
+                return
+            elif Counter==10:
                 for k in range(i, 0, -1):
                     self.occupied[k] = self.occupied[k - 1]
                 Score += 100
-                i+=1
+                i-=1
+
             Counter=0
 
     #Modifications
