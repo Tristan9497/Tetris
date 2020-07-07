@@ -233,14 +233,16 @@ class Board(object):
     def FindLine(self):
         global Score
         Counter=0
-        Line=0
-        for i in range(zellsy-1,-1,-1):
+        for i in range(0,zellsy):
             for j in range(0,zellsx):
                 if sum(self.occupied[i,j])>0:
                     Counter+=1
             if Counter==10:
-                self.removeLine(i)
-                return
+                for k in range(i, 0, -1):
+                    self.occupied[k] = self.occupied[k - 1]
+                Score += 100
+                i+=1
+            Counter=0
 
     #Modifications
 
@@ -249,14 +251,6 @@ class Board(object):
         for i in Block.shape:
             self.occupied[(Block.position[1] + i[1]), (Block.position[0] + i[0])] = copy.deepcopy(Block.color)
         PieceTrigger = True
-        self.FindLine()
-
-    def removeLine(self, Line):
-        global Score
-        for k in range(Line, 0, -1):
-            self.occupied[k]=self.occupied[k - 1]
-        Score+=100
-        #start FindLine again to rmeove potential remaining Lines
         self.FindLine()
 
     #Display
