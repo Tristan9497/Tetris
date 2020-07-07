@@ -202,7 +202,7 @@ class Board(object):
         self.width = width
         self.height = height
 
-    #Routines
+    #Checks
     def checkOccupied(self, shape, position):
         Adder = 0
         xmin = min(a[0] for a in shape) + position[0]
@@ -221,12 +221,14 @@ class Board(object):
         else:
             return True
 
-    def addPieceToOccupied(self, Block):
-        global PieceTrigger
-        for i in Block.shape:
-            self.occupied[(Block.position[1] + i[1]), (Block.position[0] + i[0])] = copy.deepcopy(Block.color)
-        PieceTrigger = True
-        self.FindLine()
+    def checkTopLine(self):
+        global GameTrigger
+        sum=0
+        for i in self.occupied[0]:
+            sum += numpy.sum(i)
+        print(sum)
+        if sum>0:
+            GameTrigger=False
 
     def FindLine(self):
         global Score
@@ -240,6 +242,15 @@ class Board(object):
                 self.removeLine(i)
                 return
 
+    #Modifications
+
+    def addPieceToOccupied(self, Block):
+        global PieceTrigger
+        for i in Block.shape:
+            self.occupied[(Block.position[1] + i[1]), (Block.position[0] + i[0])] = copy.deepcopy(Block.color)
+        PieceTrigger = True
+        self.FindLine()
+
     def removeLine(self, Line):
         global Score
         for k in range(Line, 0, -1):
@@ -247,15 +258,6 @@ class Board(object):
         Score+=100
         #start FindLine again to rmeove potential remaining Lines
         self.FindLine()
-
-    def checkTopLine(self):
-        global GameTrigger
-        sum=0
-        for i in self.occupied[0]:
-            sum += numpy.sum(i)
-        print(sum)
-        if sum>0:
-            GameTrigger=False
 
     #Display
     def drawgrid(self):
